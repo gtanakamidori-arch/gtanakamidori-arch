@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>育ちのあしあと（個人・オフライン版）</title>
+<meta name="theme-color" content="#2F6F8F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="あしあと">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#F2F5F7; --surface:#FFFFFF; --ink:#1E2B3A; --muted:#5B6B7B; --line:#D8E0E6;
+  --accent:#2F6F8F; --accent-ink:#FFFFFF; --soft:#E6EEF2; --warn:#B4543A;
+  --d1:#E0645A; --d2:#E39B2D; --d3:#3F9466; --d4:#3A75C9; --d5:#9A5CC4;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121820; --surface:#1B232D; --ink:#E6ECF1; --muted:#9AA9B6; --line:#2C3743;
+    --accent:#6FB3D2; --accent-ink:#0E1A22; --soft:#22303C; --warn:#E58C73;
+    --d1:#F08A80; --d2:#F0B65A; --d3:#6CC093; --d4:#7AA8EC; --d5:#C291E4;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121820; --surface:#1B232D; --ink:#E6ECF1; --muted:#9AA9B6; --line:#2C3743;
+  --accent:#6FB3D2; --accent-ink:#0E1A22; --soft:#22303C; --warn:#E58C73;
+  --d1:#F08A80; --d2:#F0B65A; --d3:#6CC093; --d4:#7AA8EC; --d5:#C291E4;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;font-size:16px;line-height:1.75}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDPGothic",sans-serif;font-weight:700;line-height:1.4;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:980px;margin:0 auto;padding:12px 16px 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+.bar h1{font-size:1.35rem}
+.bar .sub{color:var(--muted);font-size:.85rem}
+nav{max-width:980px;margin:0 auto;padding:0 8px;display:flex;gap:2px;overflow-x:auto}
+nav button{background:none;border:0;padding:10px 12px;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:"Zen Maru Gothic",sans-serif;font-weight:700}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:20px 16px 64px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel+.panel{margin-top:16px}
+.hint{color:var(--muted);font-size:.88rem;margin:4px 0 0}
+.notice{background:var(--soft);border-radius:10px;padding:10px 14px;font-size:.9rem;margin-bottom:16px}
+.notice.warn{border-left:4px solid var(--warn)}
+label.field{display:block;margin-top:16px;font-weight:700}
+label.field .opt{font-weight:400;color:var(--muted);font-size:.85rem;margin-left:6px}
+input[type=text],input[type=date],select,textarea{width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+textarea{min-height:110px;resize:vertical;line-height:1.7}
+fieldset{border:0;padding:0;margin:16px 0 0}
+legend{font-weight:700;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.chip span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:.92rem;cursor:pointer}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.chip input:checked+span .dot{box-shadow:0 0 0 2px var(--accent-ink)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.row>*{flex:1 1 180px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 12px;font-size:.85rem}
+.btn.danger{border-color:var(--warn);color:var(--warn);background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;align-items:center}
+.status{color:var(--muted);font-size:.9rem}
+/* timeline */
+.month{margin-top:28px}
+.month h3{font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.month h3 small{font-family:"BIZ UDPGothic",sans-serif;font-weight:400;color:var(--muted);font-size:.85rem}
+.trail{list-style:none;margin:10px 0 0;padding:0 0 0 22px;border-left:2px dashed var(--line)}
+.entry{position:relative;padding:4px 0 18px 14px}
+.entry::before{content:"";position:absolute;left:-30px;top:10px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--entry-color,var(--muted))}
+.entry .meta{font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.entry .fact{margin:4px 0 0;white-space:pre-wrap}
+.entry .reading{margin:6px 0 0;padding:6px 10px;border-radius:8px;background:var(--soft);font-size:.93rem;white-space:pre-wrap}
+.entry .reading b{font-weight:700;color:var(--muted);font-size:.8rem;display:block}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-size:.78rem;padding:2px 9px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px}
+.entry .tools{margin-top:6px;display:flex;gap:8px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;font-size:.85rem;text-decoration:underline}
+.linkbtn.danger{color:var(--warn)}
+/* balance */
+.balance{display:grid;grid-template-columns:5.5em 1fr 2.5em;gap:8px 10px;align-items:center;margin-top:12px;font-size:.92rem}
+.track{height:14px;border-radius:7px;background:var(--soft);overflow:hidden}
+.fill{height:100%;border-radius:7px}
+.num{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.sugata{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sugata .tag.zero{opacity:.45;border-style:dashed}
+.grid2{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+/* class table */
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:.85rem}
+td.heat{font-variant-numeric:tabular-nums}
+td.quiet{color:var(--warn);font-weight:700}
+.ai{margin-top:12px;white-space:pre-wrap;line-height:1.85}
+.childlist{list-style:none;padding:0;margin:12px 0 0}
+.childlist li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.childlist li .code{font-weight:700;min-width:5em}
+.childlist li .note{color:var(--muted);flex:1;font-size:.9rem}
+.empty{color:var(--muted);padding:24px 0;text-align:center}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .4s ease}}
+.groupbar{display:flex;align-items:center;gap:8px;margin-left:auto}
+.groupbar select{width:auto;margin:0;padding:6px 10px;font-family:"Zen Maru Gothic",sans-serif;font-weight:700;background:var(--soft);border-color:transparent}
+.classlabel{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 6px}
+.checks{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.inline{display:inline-flex;align-items:center;gap:6px;font-weight:400;margin-top:12px;font-size:.92rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>育ちのあしあと</h1>
+    <span class="sub">この端末だけに保存する個人用の記録</span>
+    <div class="groupbar">
+      <label for="groupSelect" class="status">表示中</label>
+      <select id="groupSelect"></select>
+    </div>
+  </div>
+  <nav role="tablist" aria-label="画面の切り替え">
+    <button role="tab" data-tab="write" aria-selected="true">記録する</button>
+    <button role="tab" data-tab="child" aria-selected="false">子どもごと</button>
+    <button role="tab" data-tab="class" aria-selected="false">クラス全体</button>
+    <button role="tab" data-tab="setup" aria-selected="false">登録・設定</button>
+  </nav>
+</header>
+
+<main>
+  <div id="conn" class="notice warn" hidden></div>
+  <div id="backupNag" class="notice" hidden></div>
+  <div id="noGroup" class="notice warn" hidden>まず「登録・設定」で年度とクラスを作成してください。</div>
+
+  <!-- 記録する -->
+  <section data-view="write">
+    <div class="panel">
+      <h2 id="formTitle">今日の姿を記録する</h2>
+      <p class="hint">子どもの名前は入れず、登録したコード（A、Bなど）で選びます。エピソード本文にも実名や家庭の詳しい事情は書かないでください。</p>
+      <div class="row">
+        <label class="field">日付<input type="date" id="fDate"></label>
+      </div>
+      <fieldset>
+        <legend>だれの姿？<span class="hint" style="font-weight:400;margin-left:6px">複数選べます</span></legend>
+        <div class="chips" id="fChildren"></div>
+        <p class="hint" id="noChildHint" hidden>このクラスにはまだ子どもが登録されていません。「登録・設定」から追加してください。</p>
+      </fieldset>
+      <label class="field">エピソード（見たこと・聞いたこと）
+        <textarea id="fFact" placeholder="例：積み木を高く積もうとして3回崩れたが、土台を広くして4回目に完成させた。「見て！」と保育者を呼びに来た。"></textarea>
+      </label>
+      <label class="field">保育者の読み取り<span class="opt">任意</span>
+        <textarea id="fReading" style="min-height:80px" placeholder="例：失敗しても自分で工夫を考え、やり遂げた喜びを伝えたい気持ちが育っている。"></textarea>
+      </label>
+      <fieldset>
+        <legend>関わる5領域</legend>
+        <div class="chips" id="fDomains"></div>
+      </fieldset>
+      <fieldset>
+        <legend>関わる10の姿<span class="hint" style="font-weight:400;margin-left:6px">任意</span></legend>
+        <div class="chips" id="fSugata"></div>
+      </fieldset>
+      <div class="actions">
+        <button class="btn" id="saveBtn">記録を保存</button>
+        <button class="btn ghost" id="cancelEdit" hidden>編集をやめる</button>
+        <span class="status" id="saveStatus" role="status"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>最近の記録</h2>
+      <div id="recentList"></div>
+    </div>
+  </section>
+
+  <!-- 子どもごと -->
+  <section data-view="child" hidden>
+    <div class="panel">
+      <div class="row">
+        <label class="field" style="margin-top:0">子ども<select id="cSelect"></select></label>
+        <label class="field" style="margin-top:0">期間<select id="cRange">
+          <option value="all">すべて</option>
+          <option value="1">直近1か月</option>
+          <option value="3">直近3か月</option>
+          <option value="6">直近6か月</option>
+          <option value="12">直近1年</option>
+        </select></label>
+        <label class="field" style="margin-top:0">領域で絞る<select id="cDomain"><option value="">すべての領域</option></select></label>
+      </div>
+      <label class="inline"><input type="checkbox" id="cAllGroups" checked> 前のクラス（過去の年度）の記録も含めて表示する</label>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="panel">
+        <h3>5領域の記録バランス</h3>
+        <p class="hint">記録の数です。少ない領域は「その子のその面を見る機会が少なかった」というサインかもしれません。</p>
+        <div class="balance" id="cBalance"></div>
+      </div>
+      <div class="panel">
+        <h3>10の姿</h3>
+        <p class="hint">点線のものは、この期間まだ記録がありません。</p>
+        <div class="sugata" id="cSugata"></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="row" style="align-items:center">
+        <h3 style="flex:1 1 auto">AIに相談する</h3>
+        <button class="btn ghost small" id="aiBtn" style="flex:0 0 auto">相談用にコピー</button>
+      </div>
+      <p class="hint">表示中の記録を、振り返りの依頼文つきでコピーします。ネットにつながったときにClaudeなどのAIに貼り付けると、育ちの流れのまとめを作ってもらえます。</p>
+      <div class="status" id="aiOut" role="status" style="margin-top:8px"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>あしあと（時系列）</h3>
+      <div id="cTimeline"></div>
+    </div>
+  </section>
+
+  <!-- クラス全体 -->
+  <section data-view="class" hidden>
+    <div class="panel">
+      <div class="row" style="align-items:center">
+        <h2 style="flex:1 1 auto" id="kTitle">クラス全体の記録状況</h2>
+        <label style="flex:0 0 auto" class="status">期間
+          <select id="kRange" style="width:auto;display:inline-block;margin-left:6px">
+            <option value="1">直近1か月</option>
+            <option value="3" selected>直近3か月</option>
+            <option value="all">すべて</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint">このクラスで記録した、子どもごと・領域別の記録数です。赤字は期間内の記録が特に少ない子です。次に意識して見てみたい子の目安にどうぞ。</p>
+      <div class="tablewrap"><table id="kTable"></table></div>
+    </div>
+    <div class="panel">
+      <h3>記録を書き出す</h3>
+      <p class="hint">表示中のクラスの記録をCSV（Excelで開ける形式）で保存します。要録づくりの材料などに。</p>
+      <div class="actions" style="margin-top:12px"><button class="btn ghost" id="csvBtn">CSVで保存</button><span class="status" id="csvStatus" role="status"></span></div>
+    </div>
+  </section>
+
+  <!-- 登録・設定 -->
+  <section data-view="setup" hidden>
+    <div class="panel">
+      <h2>年度・クラス</h2>
+      <p class="hint">作成したクラスは、画面上部の「表示中」で切り替えられます。</p>
+      <div class="row">
+        <label class="field">年度<input type="text" id="gYear" inputmode="numeric" maxlength="4" placeholder="例：2026"></label>
+        <label class="field">クラス名<input type="text" id="gName" maxlength="20" placeholder="例：ひよこ組（1歳児）"></label>
+      </div>
+      <div class="actions">
+        <button class="btn" id="addGroup">クラスを作成</button>
+        <span class="status" id="groupStatus" role="status"></span>
+      </div>
+      <ul class="childlist" id="groupList"></ul>
+    </div>
+
+    <div class="panel">
+      <h2 id="childPanelTitle">子どもの登録</h2>
+      <div class="notice warn" style="margin-top:12px">実名は登録しないでください。「A」「ひよこ03」などのコードを使い、コードと実名の対応表はこのアプリの外（紙や園のPC）で管理します。</div>
+      <div class="row">
+        <label class="field">コード<input type="text" id="sCode" maxlength="12" placeholder="例：A"></label>
+        <label class="field">メモ<span class="opt">任意・個人が特定されない内容で</span><input type="text" id="sNote" maxlength="40" placeholder="例：4月入園"></label>
+      </div>
+      <div class="actions">
+        <button class="btn" id="addChild">このクラスに登録</button>
+        <span class="status" id="childStatus" role="status"></span>
+      </div>
+      <ul class="childlist" id="childList"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>前のクラスから子どもを引き継ぐ</h3>
+      <p class="hint">進級したときなどに使います。引き継いだ子どもは、前のクラスでの記録とつながったまま、「子どもごと」で年度をまたいで育ちを見られます。</p>
+      <label class="field">引き継ぎ元のクラス<select id="importFrom"></select></label>
+      <div class="checks" id="importList"></div>
+      <div class="actions">
+        <button class="btn ghost" id="importBtn">選んだ子どもを表示中のクラスに追加</button>
+        <span class="status" id="importStatus" role="status"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>バックアップと復元</h3>
+      <p class="hint">記録はこの端末のブラウザの中だけに保存されています。スマホの紛失や故障、ブラウザのデータ削除に備えて、月に1回はバックアップを保存してください。機種変更のときも、バックアップを新しい端末で復元すれば記録を移せます。</p>
+      <p class="status" id="lastBackup"></p>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn" id="backupBtn">バックアップを保存</button>
+        <label class="btn ghost" style="position:relative;overflow:hidden">バックアップから復元<input type="file" id="restoreFile" accept=".json,application/json" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
+      </div>
+      <p class="status" id="backupStatus" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const DOMAINS = [
+    {id:"health", name:"健康", color:"var(--d1)"},
+    {id:"relation", name:"人間関係", color:"var(--d2)"},
+    {id:"env", name:"環境", color:"var(--d3)"},
+    {id:"words", name:"言葉", color:"var(--d4)"},
+    {id:"express", name:"表現", color:"var(--d5)"}
+  ];
+  const SUGATA = ["健康な心と体","自立心","協同性","道徳性・規範意識の芽生え","社会生活との関わり","思考力の芽生え","自然との関わり・生命尊重","数量や図形、標識や文字などへの関心・感覚","言葉による伝え合い","豊かな感性と表現"];
+  const domainById = Object.fromEntries(DOMAINS.map(d => [d.id, d]));
+
+  // ---------- この端末の中だけに保存する ----------
+  const KEY = "ashiato-offline-v1";
+  let state = {groups:[], children:[], records:[], lastBackup:0};
+  let storageOk = true;
+  function load() {
+    state = {groups:[], children:[], records:[], lastBackup:0};
+    try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); }
+    catch (e) { storageOk = false; }
+  }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { throw new Error("この端末に保存できませんでした。空き容量やブラウザの設定（プライベートブラウズなど）を確認してください。"); }
+  }
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+  const clean = (v, max) => String(v || "").trim().slice(0, max);
+  const store = {
+    saveGroup(g) {
+      const year = Number(g.year), name = clean(g.name, 20);
+      if (!(year >= 1990 && year <= 2100) || !name) throw new Error("年度とクラス名を確認してください。");
+      if (state.groups.some(x => x.id !== g.id && x.year === year && x.name === name)) throw new Error("同じ年度・クラス名がすでにあります。");
+      const old = state.groups.find(x => x.id === g.id);
+      if (old) { old.year = year; old.name = name; return old.id; }
+      const id = uid(); state.groups.push({id, year, name, createdAt:Date.now()}); return id;
+    },
+    saveChild(c) {
+      const code = clean(c.code, 12);
+      if (!code) throw new Error("コードを入力してください。");
+      const old = state.children.find(x => x.id === c.id);
+      const gids = old ? old.groupIds : [c.groupId];
+      if (state.children.some(x => x.id !== c.id && x.code === code && x.groupIds.some(id => gids.includes(id)))) throw new Error(`「${code}」はこのクラスですでに使われています。`);
+      if (old) { old.code = code; old.note = clean(c.note, 40); }
+      else state.children.push({id:uid(), code, note:clean(c.note, 40), groupIds:gids, archived:false, createdAt:Date.now()});
+    },
+    setChildArchived(id, v) { const c = state.children.find(x => x.id === id); if (c) c.archived = !!v; },
+    importChildren(ids, gid) {
+      const codes = state.children.filter(x => x.groupIds.includes(gid)).map(x => x.code);
+      ids.forEach(id => {
+        const c = state.children.find(x => x.id === id); if (!c || c.groupIds.includes(gid)) return;
+        if (codes.includes(c.code)) throw new Error(`コード「${c.code}」がこのクラスですでに使われています。先にどちらかのコードを変更してください。`);
+        c.groupIds.push(gid); c.archived = false;
+      });
+    },
+    saveRecord(r) {
+      const fact = clean(r.fact, 4000);
+      if (!fact || !r.childIds.length) throw new Error("子どもとエピソードを入力してください。");
+      const old = state.records.find(x => x.id === r.id);
+      const body = {date:r.date, childIds:r.childIds, fact, reading:clean(r.reading, 4000), domains:r.domains, sugata:r.sugata, updatedAt:Date.now()};
+      if (old) Object.assign(old, body);
+      else state.records.push({id:uid(), groupId:r.groupId, createdAt:Date.now(), ...body});
+    },
+    deleteRecord(id) { state.records = state.records.filter(x => x.id !== id); }
+  };
+  const errMsg = e => (e && e.message) || "うまくいきませんでした。もう一度お試しください。";
+
+  const $ = s => document.querySelector(s);
+  const el = (tag, props = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") n.className = v;
+      else if (k === "style") n.setAttribute("style", v);
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null) n.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return n;
+  };
+  const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  const sinceDate = months => { if (months === "all") return ""; const d = new Date(); d.setMonth(d.getMonth() - Number(months)); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  const fmtDate = s => { const [y, m, d] = s.split("-").map(Number); const w = "日月火水木金土"[new Date(y, m - 1, d).getDay()]; return `${m}月${d}日（${w}）`; };
+  const byCode = (a, b) => a.code.localeCompare(b.code, "ja", {numeric:true});
+
+  let groups = [], children = [], records = [], loaded = false;
+  let currentGroup = "";
+  let editingId = null, editingChildId = null, editingGroupId = null;
+  try { currentGroup = localStorage.getItem("ashiato-group") || ""; } catch (e) {}
+
+  function apply() {
+    groups = state.groups; children = state.children;
+    records = [...state.records].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+    loaded = true;
+    renderAll();
+  }
+
+  const groupLabel = id => { const g = groups.find(x => x.id === id); return g ? `${g.year}年度 ${g.name}` : "（クラス未設定）"; };
+  const sortedGroups = () => [...groups].sort((a, b) => (b.year - a.year) || a.name.localeCompare(b.name, "ja"));
+  const inGroup = (c, gid) => Array.isArray(c.groupIds) && c.groupIds.includes(gid);
+  const groupChildren = (gid = currentGroup) => children.filter(c => inGroup(c, gid)).sort(byCode);
+  const activeChildren = () => groupChildren().filter(c => !c.archived);
+  const groupRecords = () => records.filter(r => r.groupId === currentGroup);
+  const childCode = id => (children.find(c => c.id === id) || {}).code || "（削除済み）";
+
+  // ---------- tabs ----------
+  let currentTab = "write";
+  function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab));
+    document.querySelectorAll("[data-view]").forEach(v => v.hidden = v.dataset.view !== tab);
+    renderAll();
+  }
+  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  $("#groupSelect").addEventListener("change", e => {
+    currentGroup = e.target.value;
+    try { localStorage.setItem("ashiato-group", currentGroup); } catch (err) {}
+    resetForm(); $("#aiOut").textContent = ""; editingChildId = null;
+    renderAll();
+  });
+
+  // ---------- form chips ----------
+  const chip = (name, value, label, color) => el("label", {class:"chip"},
+    el("input", {type:"checkbox", name, value}),
+    el("span", {}, color ? el("i", {class:"dot", style:`background:${color}`}) : null, label));
+  DOMAINS.forEach(d => $("#fDomains").append(chip("domain", d.id, d.name, d.color)));
+  SUGATA.forEach(s => $("#fSugata").append(chip("sugata", s, s)));
+  DOMAINS.forEach(d => $("#cDomain").append(el("option", {value:d.id}, d.name)));
+  $("#fDate").value = today();
+  const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value);
+  const setChecked = (name, vals) => document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = vals.includes(i.value));
+
+  // ---------- rendering ----------
+  function renderGroupSelect() {
+    const sel = $("#groupSelect");
+    const list = sortedGroups();
+    if (!list.some(g => g.id === currentGroup)) currentGroup = list[0] ? list[0].id : "";
+    sel.replaceChildren(...(list.length ? list.map(g => el("option", {value:g.id}, `${g.year}年度 ${g.name}`)) : [el("option", {value:""}, "クラス未作成")]));
+    sel.value = currentGroup; sel.disabled = !list.length;
+    $("#noGroup").hidden = !loaded || list.length > 0;
+  }
+  function renderChildChips() {
+    const box = $("#fChildren"); const keep = checked("child");
+    box.replaceChildren(...activeChildren().map(c => chip("child", c.id, c.code)));
+    setChecked("child", keep);
+    $("#noChildHint").hidden = !currentGroup || activeChildren().length > 0;
+  }
+  function entryNode(r, opts = {}) {
+    const ds = (r.domains || []).map(id => domainById[id]).filter(Boolean);
+    const li = el("li", {class:"entry", style:`--entry-color:${ds[0] ? ds[0].color : "var(--muted)"}`});
+    li.append(el("div", {class:"meta"},
+      el("span", {}, fmtDate(r.date)),
+      opts.showChildren !== false ? el("span", {}, (r.childIds || []).map(childCode).join("、")) : null,
+      r.groupId !== currentGroup ? el("span", {class:"classlabel"}, groupLabel(r.groupId)) : null));
+    li.append(el("p", {class:"fact"}, r.fact || ""));
+    if (r.reading) li.append(el("p", {class:"reading"}, el("b", {}, "読み取り"), r.reading));
+    const tags = el("div", {class:"tags"});
+    ds.forEach(d => tags.append(el("span", {class:"tag"}, el("i", {class:"dot", style:`background:${d.color}`}), d.name)));
+    (r.sugata || []).forEach(s => tags.append(el("span", {class:"tag"}, s)));
+    if (tags.childNodes.length) li.append(tags);
+    if (r.groupId === currentGroup) li.append(el("div", {class:"tools"},
+      el("button", {class:"linkbtn", onclick:() => startEdit(r)}, "編集"),
+      el("button", {class:"linkbtn danger", onclick:() => removeRecord(r)}, "削除")));
+    return li;
+  }
+  function renderRecent() {
+    const box = $("#recentList"); const list = groupRecords().slice(0, 8);
+    if (!list.length) { box.replaceChildren(el("p", {class:"empty"}, currentGroup ? "このクラスにはまだ記録がありません。上のフォームから最初の記録を残してみましょう。" : "クラスを作成すると記録できるようになります。")); return; }
+    box.replaceChildren(el("ul", {class:"trail", style:"margin-top:16px"}, list.map(r => entryNode(r))));
+  }
+  function childBase() {
+    const id = $("#cSelect").value; const since = sinceDate($("#cRange").value); const all = $("#cAllGroups").checked;
+    return records.filter(r => (r.childIds || []).includes(id) && (!since || r.date >= since) && (all || r.groupId === currentGroup));
+  }
+  function childRecords() { const dom = $("#cDomain").value; return childBase().filter(r => !dom || (r.domains || []).includes(dom)); }
+  function renderChild() {
+    const sel = $("#cSelect"); const keep = sel.value; const list = groupChildren();
+    sel.replaceChildren(...(list.length ? list.map(c => el("option", {value:c.id}, c.code + (c.note ? `（${c.note}）` : ""))) : [el("option", {value:""}, "このクラスに子どもがいません")]));
+    if (list.some(c => c.id === keep)) sel.value = keep;
+    const id = sel.value; const all = childBase(); const recs = childRecords();
+    const counts = DOMAINS.map(d => all.filter(r => (r.domains || []).includes(d.id)).length);
+    const max = Math.max(1, ...counts);
+    $("#cBalance").replaceChildren(...DOMAINS.flatMap((d, i) => [
+      el("span", {}, d.name),
+      el("div", {class:"track"}, el("div", {class:"fill", style:`width:${counts[i] / max * 100}%;background:${d.color}`})),
+      el("span", {class:"num"}, counts[i])]));
+    $("#cSugata").replaceChildren(...SUGATA.map(s => { const n = all.filter(r => (r.sugata || []).includes(s)).length; return el("span", {class:"tag" + (n ? "" : " zero")}, `${s}${n ? "　" + n : ""}`); }));
+    const box = $("#cTimeline");
+    if (!recs.length) { box.replaceChildren(el("p", {class:"empty"}, id ? "この条件の記録はまだありません。" : "まず「登録・設定」で子どもを追加してください。")); return; }
+    const byMonth = {};
+    [...recs].sort((a, b) => a.date.localeCompare(b.date)).forEach(r => (byMonth[r.date.slice(0, 7)] ||= []).push(r));
+    box.replaceChildren(...Object.entries(byMonth).map(([ym, rs]) => {
+      const [y, m] = ym.split("-").map(Number);
+      return el("div", {class:"month"}, el("h3", {}, `${y}年${m}月`, el("small", {}, `${rs.length}件`)), el("ul", {class:"trail"}, rs.map(r => entryNode(r, {showChildren:false}))));
+    }));
+  }
+  function renderClass() {
+    $("#kTitle").textContent = currentGroup ? `${groupLabel(currentGroup)}の記録状況` : "クラス全体の記録状況";
+    const since = sinceDate($("#kRange").value);
+    const recs = groupRecords().filter(r => !since || r.date >= since);
+    const list = activeChildren(); const t = $("#kTable");
+    if (!list.length) { t.replaceChildren(el("tbody", {}, el("tr", {}, el("td", {class:"empty"}, "このクラスに子どもが登録されていません。")))); return; }
+    const rows = list.map(c => {
+      const mine = recs.filter(r => (r.childIds || []).includes(c.id));
+      return {c, total:mine.length, per:DOMAINS.map(d => mine.filter(r => (r.domains || []).includes(d.id)).length), last:mine.reduce((a, r) => r.date > a ? r.date : a, "")};
+    });
+    const avg = rows.reduce((a, r) => a + r.total, 0) / rows.length;
+    t.replaceChildren(
+      el("thead", {}, el("tr", {}, el("th", {}, "子ども"), el("th", {}, "合計"), DOMAINS.map(d => el("th", {}, el("i", {class:"dot", style:`background:${d.color};margin-right:4px`}), d.name)), el("th", {}, "最終記録"))),
+      el("tbody", {}, rows.map(r => el("tr", {},
+        el("td", {}, r.c.code),
+        el("td", {class:"heat" + (avg > 0 && r.total < avg * 0.5 ? " quiet" : "")}, r.total),
+        r.per.map((n, i) => el("td", {class:"heat", style:n ? `background:color-mix(in srgb, ${DOMAINS[i].color} ${Math.min(55, 12 + n * 8)}%, transparent)` : ""}, n)),
+        el("td", {class:"status"}, r.last ? fmtDate(r.last) : "—")))));
+  }
+  function renderSetup() {
+    const gl = $("#groupList"); const glist = sortedGroups();
+    if (!glist.length) gl.replaceChildren(el("li", {class:"empty", style:"justify-content:center"}, "まだクラスがありません。"));
+    else gl.replaceChildren(...glist.map(g => {
+      if (editingGroupId === g.id) {
+        const yIn = el("input", {type:"text", inputmode:"numeric", maxlength:"4", value:String(g.year), "aria-label":"年度", style:"margin-top:0;max-width:6em"});
+        const nIn = el("input", {type:"text", maxlength:"20", value:g.name, "aria-label":"クラス名", style:"margin-top:0"});
+        return el("li", {style:"flex-wrap:wrap"}, yIn, el("span", {style:"flex:1 1 12em"}, nIn),
+          el("button", {class:"btn small", onclick:() => saveGroupEdit(g, yIn.value, nIn.value)}, "変更を保存"),
+          el("button", {class:"btn ghost small", onclick:() => { editingGroupId = null; renderSetup(); }}, "やめる"));
+      }
+      return el("li", {},
+        el("span", {class:"code", style:"min-width:auto"}, `${g.year}年度 ${g.name}`),
+        el("span", {class:"note"}, `子ども${groupChildren(g.id).length}人　記録${records.filter(r => r.groupId === g.id).length}件` + (g.id === currentGroup ? "　（表示中）" : "")),
+        el("button", {class:"btn ghost small", onclick:() => { editingGroupId = g.id; renderSetup(); }}, "編集"));
+    }));
+    $("#childPanelTitle").textContent = currentGroup ? `子どもの登録（${groupLabel(currentGroup)}）` : "子どもの登録";
+    $("#addChild").disabled = !currentGroup;
+    const ul = $("#childList"); const list = groupChildren();
+    if (!list.length) ul.replaceChildren(el("li", {class:"empty", style:"justify-content:center"}, currentGroup ? "このクラスにはまだ登録がありません。" : "先にクラスを作成してください。"));
+    else ul.replaceChildren(...list.map(c => {
+      const n = records.filter(r => (r.childIds || []).includes(c.id)).length;
+      const others = (c.groupIds || []).filter(g => g !== currentGroup && groups.some(x => x.id === g)).map(groupLabel);
+      if (editingChildId === c.id) {
+        const codeIn = el("input", {type:"text", maxlength:"12", value:c.code, "aria-label":"コード", style:"margin-top:0;max-width:9em"});
+        const noteIn = el("input", {type:"text", maxlength:"40", value:c.note || "", "aria-label":"メモ", placeholder:"メモ（任意）", style:"margin-top:0"});
+        return el("li", {style:"flex-wrap:wrap"}, codeIn, el("span", {style:"flex:1 1 12em"}, noteIn),
+          el("button", {class:"btn small", onclick:() => (ok => { if (ok) { editingChildId = null; $("#childStatus").textContent = "変更しました。これまでの記録にも反映されます。"; renderSetup(); } })(run("#childStatus", "saveChild", {...c, code:codeIn.value, note:noteIn.value}))}, "変更を保存"),
+          el("button", {class:"btn ghost small", onclick:() => { editingChildId = null; renderSetup(); }}, "やめる"));
+      }
+      return el("li", {style:"flex-wrap:wrap"},
+        el("span", {class:"code"}, c.code),
+        el("span", {class:"note"}, (c.note || "") + `　記録${n}件（全期間）` + (others.length ? `　前のクラス：${others.join("、")}` : "") + (c.archived ? "　（記録画面に表示しない）" : "")),
+        el("button", {class:"btn ghost small", onclick:() => { editingChildId = c.id; renderSetup(); }}, "編集"),
+        el("button", {class:"btn ghost small", onclick:() => run("#childStatus", "setChildArchived", c.id, !c.archived)}, c.archived ? "表示に戻す" : "表示しない"));
+    }));
+    const sel = $("#importFrom"); const keep = sel.value;
+    const others = sortedGroups().filter(g => g.id !== currentGroup);
+    sel.replaceChildren(...(others.length ? others.map(g => el("option", {value:g.id}, `${g.year}年度 ${g.name}`)) : [el("option", {value:""}, "ほかのクラスがありません")]));
+    if (others.some(g => g.id === keep)) sel.value = keep;
+    const cands = sel.value ? groupChildren(sel.value).filter(c => !inGroup(c, currentGroup)) : [];
+    $("#importList").replaceChildren(...(cands.length ? cands.map(c => chip("import", c.id, c.code)) : [el("p", {class:"hint"}, sel.value ? "引き継げる子どもはいません。" : "")]));
+    $("#importBtn").disabled = !currentGroup || !cands.length;
+  }
+  $("#importFrom").addEventListener("change", renderSetup);
+
+  function renderAll() {
+    renderGroupSelect(); renderChildChips();
+    $("#saveBtn").disabled = !currentGroup;
+    if (currentTab === "write") renderRecent();
+    if (currentTab === "child") renderChild();
+    if (currentTab === "class") renderClass();
+    if (currentTab === "setup") renderSetup();
+    renderBackup();
+  }
+  ["#cSelect", "#cRange", "#cDomain", "#cAllGroups"].forEach(s => $(s).addEventListener("change", () => { $("#aiOut").textContent = ""; renderChild(); }));
+  $("#kRange").addEventListener("change", renderClass);
+
+  // ---------- writes ----------
+  // サーバー関数を呼び、成功したら最新データで画面を更新する
+  // 保存処理を行い、端末に書き込んで画面を更新する
+  function run(statusSel, fn, ...args) {
+    try { const out = store[fn](...args); persist(); apply(); $(statusSel).textContent = "保存しました。"; return out === undefined ? true : out; }
+    catch (e) { load(); apply(); $(statusSel).textContent = errMsg(e); return null; }
+  }
+
+  function resetForm() {
+    editingId = null;
+    $("#formTitle").textContent = "今日の姿を記録する"; $("#saveBtn").textContent = "記録を保存"; $("#cancelEdit").hidden = true;
+    $("#fFact").value = ""; $("#fReading").value = "";
+    setChecked("child", []); setChecked("domain", []); setChecked("sugata", []);
+    $("#fDate").value = today();
+  }
+  function startEdit(r) {
+    showTab("write"); editingId = r.id;
+    $("#formTitle").textContent = "記録を編集する"; $("#saveBtn").textContent = "変更を保存"; $("#cancelEdit").hidden = false;
+    $("#fDate").value = r.date; $("#fFact").value = r.fact || ""; $("#fReading").value = r.reading || "";
+    setChecked("child", r.childIds || []); setChecked("domain", r.domains || []); setChecked("sugata", r.sugata || []);
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  $("#cancelEdit").addEventListener("click", () => { resetForm(); $("#saveStatus").textContent = ""; });
+
+  $("#saveBtn").addEventListener("click", async () => {
+    const childIds = checked("child"); const fact = $("#fFact").value.trim();
+    if (!childIds.length) return $("#saveStatus").textContent = "記録する子どもを選んでください。";
+    if (!fact) return $("#saveStatus").textContent = "エピソードを入力してください。";
+    $("#saveBtn").disabled = true;
+    const ok = run("#saveStatus", "saveRecord", {id:editingId || "", groupId:currentGroup, date:$("#fDate").value || today(), childIds, fact, reading:$("#fReading").value.trim(), domains:checked("domain"), sugata:checked("sugata")});
+    if (ok) resetForm();
+    $("#saveBtn").disabled = !currentGroup;
+  });
+  function removeRecord(r) {
+    if (!confirm(`${fmtDate(r.date)}の記録を削除します。元に戻せません。よろしいですか？`)) return;
+    run("#saveStatus", "deleteRecord", r.id);
+  }
+
+  const parseYear = v => { const y = Number(String(v).trim().replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))); return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null; };
+  $("#addGroup").addEventListener("click", async () => {
+    const year = parseYear($("#gYear").value); const name = $("#gName").value.trim();
+    if (!year) return $("#groupStatus").textContent = "年度を4桁の数字で入力してください（例：2026）。";
+    if (!name) return $("#groupStatus").textContent = "クラス名を入力してください。";
+    const id = run("#groupStatus", "saveGroup", {id:"", year, name});
+    if (id) {
+      currentGroup = id; try { localStorage.setItem("ashiato-group", currentGroup); } catch (e) {}
+      $("#gName").value = ""; $("#groupStatus").textContent = `「${year}年度 ${name}」を作成し、表示を切り替えました。`; renderAll();
+    }
+  });
+  async function saveGroupEdit(g, yRaw, nRaw) {
+    const year = parseYear(yRaw);
+    if (!year) return $("#groupStatus").textContent = "年度を4桁の数字で入力してください。";
+    const d = run("#groupStatus", "saveGroup", {id:g.id, year, name:nRaw});
+    if (d) { editingGroupId = null; renderSetup(); }
+  }
+  $("#addChild").addEventListener("click", async () => {
+    const code = $("#sCode").value.trim();
+    if (!code) return $("#childStatus").textContent = "コードを入力してください。";
+    const d = run("#childStatus", "saveChild", {id:"", code, note:$("#sNote").value, groupId:currentGroup});
+    if (d) { $("#sCode").value = ""; $("#sNote").value = ""; $("#childStatus").textContent = `「${code}」を登録しました。`; }
+  });
+  $("#importBtn").addEventListener("click", () => {
+    const ids = checked("import");
+    if (!ids.length) return $("#importStatus").textContent = "引き継ぐ子どもを選んでください。";
+    run("#importStatus", "importChildren", ids, currentGroup);
+  });
+
+  // ---------- files: share sheet on phones, download elsewhere ----------
+  async function saveFile(name, text, type) {
+    const blob = new Blob([text], {type});
+    try {
+      const file = new File([blob], name, {type});
+      if (navigator.canShare && navigator.canShare({files:[file]})) { await navigator.share({files:[file], title:name}); return true; }
+    } catch (e) { if (e && e.name === "AbortError") return false; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    return true;
+  }
+  const stamp = () => today().replace(/-/g, "");
+
+  // AI相談用コピー
+  $("#aiBtn").addEventListener("click", async () => {
+    const recs = [...childRecords()].sort((a, b) => a.date.localeCompare(b.date));
+    if (!recs.length) { $("#aiOut").textContent = "この条件の記録がありません。"; return; }
+    const code = childCode($("#cSelect").value);
+    const data = recs.map(r => `【${r.date}・${groupLabel(r.groupId)}】${r.fact}${r.reading ? `\n（保育者の読み取り）${r.reading}` : ""}${(r.domains || []).length ? `\n［領域］${r.domains.map(id => (domainById[id] || {}).name).join("・")}` : ""}${(r.sugata || []).length ? `\n［10の姿］${r.sugata.join("・")}` : ""}`).join("\n\n");
+    const text = `以下は保育所の子ども「${code}」についての、保育者による日々の記録です（個人名は伏せています）。\n記録をもとに、次の内容を日本語でまとめてください。\n1. この期間の子どもの姿の変化の流れ（記録の事実を根拠に）\n2. 育ちつつあると読み取れること（5領域や10の姿の視点も参考に）\n3. 記録が少なく、今後意識して見てみるとよさそうな面\n4. 次の関わりや環境づくりのヒント（2〜3点）\n記録にないことは断定せず、発達の遅れや診断に関わる判断はしないでください。600〜800字程度で。\n\n---記録---\n${data}`;
+    try { await navigator.clipboard.writeText(text); $("#aiOut").textContent = `${recs.length}件の記録をコピーしました。AIのチャットに貼り付けてください。`; }
+    catch (e) {
+      const ta = el("textarea", {style:"width:100%;min-height:160px;margin-top:8px", readonly:true}); ta.value = text;
+      $("#aiOut").replaceChildren("自動でコピーできなかったので、下の文章を長押しして全選択・コピーしてください。", ta); ta.select();
+    }
+  });
+
+  // CSV
+  const csvCell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  $("#csvBtn").addEventListener("click", async () => {
+    if (!currentGroup) return $("#csvStatus").textContent = "クラスを選んでください。";
+    const head = ["クラス", "日付", "子ども", "エピソード", "読み取り", "5領域", "10の姿"];
+    const lines = [...groupRecords()].sort((a, b) => a.date.localeCompare(b.date)).map(r => [groupLabel(r.groupId), r.date, (r.childIds || []).map(childCode).join("・"), r.fact, r.reading, (r.domains || []).map(id => (domainById[id] || {}).name).filter(Boolean).join("・"), (r.sugata || []).join("・")].map(csvCell).join(","));
+    const safe = groupLabel(currentGroup).replace(/[\\/:*?"<>|\s]+/g, "_");
+    const ok = await saveFile(`育ちのあしあと_${safe}_${stamp()}.csv`, "\uFEFF" + [head.map(csvCell).join(","), ...lines].join("\r\n"), "text/csv");
+    $("#csvStatus").textContent = ok ? "書き出しました。" : "キャンセルしました。";
+  });
+
+  // バックアップ・復元
+  function renderBackup() {
+    const t = state.lastBackup;
+    $("#lastBackup").textContent = t ? `前回のバックアップ：${new Date(t).toLocaleDateString("ja-JP")}` : "まだバックアップを保存していません。";
+    const days = t ? (Date.now() - t) / 864e5 : Infinity;
+    const nag = $("#backupNag");
+    nag.hidden = !(state.records.length >= 5 && days > 30);
+    if (!nag.hidden) nag.replaceChildren(t ? "前回のバックアップから1か月以上たっています。" : "記録がたまってきました。", " ", el("button", {class:"linkbtn", onclick:() => showTab("setup")}, "バックアップを保存する"));
+  }
+  $("#backupBtn").addEventListener("click", async () => {
+    const data = JSON.stringify({app:"sodachi-ashiato", version:1, exportedAt:new Date().toISOString(), groups:state.groups, children:state.children, records:state.records}, null, 1);
+    const ok = await saveFile(`あしあとバックアップ_${stamp()}.json`, data, "application/json");
+    if (ok) { state.lastBackup = Date.now(); try { persist(); } catch (e) {} $("#backupStatus").textContent = "バックアップを保存しました。ファイルアプリやクラウドなど、端末の外にも保管してください。"; }
+    else $("#backupStatus").textContent = "キャンセルしました。";
+    renderAll();
+  });
+  $("#restoreFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (d.app !== "sodachi-ashiato" || !Array.isArray(d.records) || !Array.isArray(d.children) || !Array.isArray(d.groups)) throw new Error();
+      if (!confirm(`バックアップ（${(d.exportedAt || "").slice(0, 10)}、記録${d.records.length}件）で、今この端末にある記録をすべて置き換えます。よろしいですか？`)) return;
+      state.groups = d.groups; state.children = d.children; state.records = d.records;
+      persist(); currentGroup = ""; apply();
+      $("#backupStatus").textContent = `復元しました（記録${d.records.length}件）。`;
+    } catch (err) { load(); $("#backupStatus").textContent = "このファイルは読み込めませんでした。「育ちのあしあと」で保存したバックアップか確認してください。"; }
+  });
+
+  // ---------- start ----------
+  load();
+  if (!storageOk) { $("#conn").hidden = false; $("#conn").textContent = "この端末に記録を保存できない設定になっています（プライベートブラウズなど）。通常のモードで開いてください。"; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  apply();
+  if (!groups.length) showTab("setup");
+  if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude\.ai$/.test(location.hostname)) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
