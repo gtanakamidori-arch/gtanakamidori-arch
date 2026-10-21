@@ -1,6 +1,6 @@
 // 育ちのあしあと（オフライン版）のサービスワーカー
 // アプリを更新したときは、CACHE の番号を1つ上げてください（例：v2）。
-const CACHE = "ashiato-offline-v1";
+const CACHE = "ashiato-offline-v5";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

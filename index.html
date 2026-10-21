@@ -57,6 +57,9 @@ main{max-width:980px;margin:0 auto;padding:20px 16px 64px}
 label.field{display:block;margin-top:16px;font-weight:700}
 label.field .opt{font-weight:400;color:var(--muted);font-size:.85rem;margin-left:6px}
 input[type=text],input[type=date],select,textarea{width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:2.9em;text-align:left;line-height:1.4}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-datetime-edit{padding:0}
 textarea{min-height:110px;resize:vertical;line-height:1.7}
 fieldset{border:0;padding:0;margin:16px 0 0}
 legend{font-weight:700;padding:0}
@@ -123,6 +126,10 @@ td.quiet{color:var(--warn);font-weight:700}
 .classlabel{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 6px}
 .checks{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .inline{display:inline-flex;align-items:center;gap:6px;font-weight:400;margin-top:12px;font-size:.92rem}
+.ask{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,16,24,.5)}
+.askcard{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;width:100%;max-width:420px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.askcard p{margin:0;white-space:pre-wrap}
+.btn.dangerfill{background:var(--warn);border-color:var(--warn);color:#fff}
 </style>
 </head>
 <body>
@@ -137,6 +144,7 @@ td.quiet{color:var(--warn);font-weight:700}
   </div>
   <nav role="tablist" aria-label="画面の切り替え">
     <button role="tab" data-tab="write" aria-selected="true">記録する</button>
+    <button role="tab" data-tab="journal" aria-selected="false">日誌</button>
     <button role="tab" data-tab="child" aria-selected="false">子どもごと</button>
     <button role="tab" data-tab="class" aria-selected="false">クラス全体</button>
     <button role="tab" data-tab="setup" aria-selected="false">登録・設定</button>
@@ -188,6 +196,39 @@ td.quiet{color:var(--warn);font-weight:700}
   </section>
 
   <!-- 子どもごと -->
+  <section data-view="journal" hidden>
+    <div class="panel">
+      <div class="row" style="align-items:end">
+        <h2 style="flex:1 1 auto" id="jTitle">日誌</h2>
+        <label class="field" style="flex:0 1 12em;margin-top:0">日付<input type="date" id="jDate"></label>
+      </div>
+      <p class="hint" id="jMeta"></p>
+      <label class="field">活動内容
+        <textarea id="jActivity" placeholder="例：園庭で色水遊び。朝顔の花びらを使って色の変化を楽しんだ。"></textarea>
+      </label>
+      <label class="field">全体の子どもの姿
+        <textarea id="jWhole" placeholder="例：色が変わる様子に驚き、「見て！」と友達同士で見せ合う姿が多く見られた。"></textarea>
+      </label>
+      <label class="field">振り返り・次への課題
+        <textarea id="jReflect" style="min-height:80px" placeholder="例：容器が足りず待つ時間が長かった。明日は数を増やし、混ぜる道具も用意したい。"></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn" id="jSave">日誌を保存</button>
+        <button class="btn danger" id="jDelete" hidden>この日の日誌を削除</button>
+        <span class="status" id="jStatus" role="status"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>この日の個別の記録</h3>
+      <p class="hint">「記録する」で入力した、この日の子どもの姿です。</p>
+      <div id="jRecords"></div>
+    </div>
+    <div class="panel">
+      <h3>これまでの日誌</h3>
+      <div id="jList"></div>
+    </div>
+  </section>
+
   <section data-view="child" hidden>
     <div class="panel">
       <div class="row">
@@ -248,7 +289,8 @@ td.quiet{color:var(--warn);font-weight:700}
     <div class="panel">
       <h3>記録を書き出す</h3>
       <p class="hint">表示中のクラスの記録をCSV（Excelで開ける形式）で保存します。要録づくりの材料などに。</p>
-      <div class="actions" style="margin-top:12px"><button class="btn ghost" id="csvBtn">CSVで保存</button><span class="status" id="csvStatus" role="status"></span></div>
+      <div class="actions" style="margin-top:12px"><button class="btn ghost" id="csvBtn">記録をCSVで保存</button>
+        <button class="btn ghost" id="jCsvBtn">日誌をCSVで保存</button><span class="status" id="csvStatus" role="status"></span></div>
     </div>
   </section>
 
@@ -306,8 +348,35 @@ td.quiet{color:var(--warn);font-weight:700}
   </section>
 </main>
 
+<div id="askBox" class="ask" hidden role="dialog" aria-modal="true" aria-labelledby="askMsg">
+  <div class="askcard">
+    <p id="askMsg"></p>
+    <div class="actions" style="justify-content:flex-end">
+      <button class="btn ghost" id="askNo">やめる</button>
+      <button class="btn" id="askYes">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
+
+  // 確認ダイアログ（iPhoneなどでブラウザ標準の確認画面が出ない環境でも動くよう、画面内に表示）
+  function ask(msg, opt = {}) {
+    return new Promise(resolve => {
+      const box = document.getElementById("askBox"), yes = document.getElementById("askYes"), no = document.getElementById("askNo");
+      document.getElementById("askMsg").textContent = msg;
+      yes.textContent = opt.ok || "OK"; yes.className = "btn" + (opt.danger ? " dangerfill" : "");
+      no.hidden = !!opt.alertOnly;
+      box.hidden = false; yes.focus();
+      const done = v => { box.hidden = true; yes.onclick = no.onclick = box.onclick = null; document.removeEventListener("keydown", onKey); resolve(v); };
+      const onKey = e => { if (e.key === "Escape") done(false); };
+      yes.onclick = () => done(true); no.onclick = () => done(false);
+      box.onclick = e => { if (e.target === box) done(false); };
+      document.addEventListener("keydown", onKey);
+    });
+  }
+  const notify = msg => ask(msg, {alertOnly:true});
   const DOMAINS = [
     {id:"health", name:"健康", color:"var(--d1)"},
     {id:"relation", name:"人間関係", color:"var(--d2)"},
@@ -320,10 +389,10 @@ td.quiet{color:var(--warn);font-weight:700}
 
   // ---------- この端末の中だけに保存する ----------
   const KEY = "ashiato-offline-v1";
-  let state = {groups:[], children:[], records:[], lastBackup:0};
+  let state = {groups:[], children:[], records:[], journals:[], lastBackup:0};
   let storageOk = true;
   function load() {
-    state = {groups:[], children:[], records:[], lastBackup:0};
+    state = {groups:[], children:[], records:[], journals:[], lastBackup:0};
     try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); }
     catch (e) { storageOk = false; }
   }
@@ -368,7 +437,13 @@ td.quiet{color:var(--warn);font-weight:700}
       if (old) Object.assign(old, body);
       else state.records.push({id:uid(), groupId:r.groupId, createdAt:Date.now(), ...body});
     },
-    deleteRecord(id) { state.records = state.records.filter(x => x.id !== id); }
+    deleteRecord(id) { state.records = state.records.filter(x => x.id !== id); },
+    deleteChild(id) {
+      state.records = state.records
+        .map(r => r.childIds.includes(id) ? {...r, childIds:r.childIds.filter(x => x !== id), updatedAt:Date.now()} : r)
+        .filter(r => r.childIds.length > 0);
+      state.children = state.children.filter(x => x.id !== id);
+    }
   };
   const errMsg = e => (e && e.message) || "うまくいきませんでした。もう一度お試しください。";
 
@@ -389,13 +464,13 @@ td.quiet{color:var(--warn);font-weight:700}
   const fmtDate = s => { const [y, m, d] = s.split("-").map(Number); const w = "日月火水木金土"[new Date(y, m - 1, d).getDay()]; return `${m}月${d}日（${w}）`; };
   const byCode = (a, b) => a.code.localeCompare(b.code, "ja", {numeric:true});
 
-  let groups = [], children = [], records = [], loaded = false;
+  let groups = [], children = [], records = [], journals = [], loaded = false;
   let currentGroup = "";
   let editingId = null, editingChildId = null, editingGroupId = null;
   try { currentGroup = localStorage.getItem("ashiato-group") || ""; } catch (e) {}
 
   function apply() {
-    groups = state.groups; children = state.children;
+    groups = state.groups; children = state.children; journals = state.journals || [];
     records = [...state.records].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
     loaded = true;
     renderAll();
@@ -459,6 +534,7 @@ td.quiet{color:var(--warn);font-weight:700}
       opts.showChildren !== false ? el("span", {}, (r.childIds || []).map(childCode).join("、")) : null,
       r.groupId !== currentGroup ? el("span", {class:"classlabel"}, groupLabel(r.groupId)) : null));
     li.append(el("p", {class:"fact"}, r.fact || ""));
+    if (opts.showActivity) { const j = journalFor(r.groupId, r.date); if (j && j.activity) li.append(el("p", {class:"hint", style:"margin:2px 0 0"}, "その日の活動：" + snippet(j.activity, 50))); }
     if (r.reading) li.append(el("p", {class:"reading"}, el("b", {}, "読み取り"), r.reading));
     const tags = el("div", {class:"tags"});
     ds.forEach(d => tags.append(el("span", {class:"tag"}, el("i", {class:"dot", style:`background:${d.color}`}), d.name)));
@@ -497,7 +573,7 @@ td.quiet{color:var(--warn);font-weight:700}
     [...recs].sort((a, b) => a.date.localeCompare(b.date)).forEach(r => (byMonth[r.date.slice(0, 7)] ||= []).push(r));
     box.replaceChildren(...Object.entries(byMonth).map(([ym, rs]) => {
       const [y, m] = ym.split("-").map(Number);
-      return el("div", {class:"month"}, el("h3", {}, `${y}年${m}月`, el("small", {}, `${rs.length}件`)), el("ul", {class:"trail"}, rs.map(r => entryNode(r, {showChildren:false}))));
+      return el("div", {class:"month"}, el("h3", {}, `${y}年${m}月`, el("small", {}, `${rs.length}件`)), el("ul", {class:"trail"}, rs.map(r => entryNode(r, {showChildren:false, showActivity:true}))));
     }));
   }
   function renderClass() {
@@ -553,7 +629,8 @@ td.quiet{color:var(--warn);font-weight:700}
         el("span", {class:"code"}, c.code),
         el("span", {class:"note"}, (c.note || "") + `　記録${n}件（全期間）` + (others.length ? `　前のクラス：${others.join("、")}` : "") + (c.archived ? "　（記録画面に表示しない）" : "")),
         el("button", {class:"btn ghost small", onclick:() => { editingChildId = c.id; renderSetup(); }}, "編集"),
-        el("button", {class:"btn ghost small", onclick:() => run("#childStatus", "setChildArchived", c.id, !c.archived)}, c.archived ? "表示に戻す" : "表示しない"));
+        el("button", {class:"btn ghost small", onclick:() => run("#childStatus", "setChildArchived", c.id, !c.archived)}, c.archived ? "表示に戻す" : "表示しない"),
+        el("button", {class:"btn danger small", onclick:() => deleteChild(c)}, "削除"));
     }));
     const sel = $("#importFrom"); const keep = sel.value;
     const others = sortedGroups().filter(g => g.id !== currentGroup);
@@ -572,6 +649,7 @@ td.quiet{color:var(--warn);font-weight:700}
     if (currentTab === "child") renderChild();
     if (currentTab === "class") renderClass();
     if (currentTab === "setup") renderSetup();
+    if (currentTab === "journal") renderJournal();
     renderBackup();
   }
   ["#cSelect", "#cRange", "#cDomain", "#cAllGroups"].forEach(s => $(s).addEventListener("change", () => { $("#aiOut").textContent = ""; renderChild(); }));
@@ -610,8 +688,26 @@ td.quiet{color:var(--warn);font-weight:700}
     if (ok) resetForm();
     $("#saveBtn").disabled = !currentGroup;
   });
-  function removeRecord(r) {
-    if (!confirm(`${fmtDate(r.date)}の記録を削除します。元に戻せません。よろしいですか？`)) return;
+  function deleteChildMessage(c) {
+    const mine = records.filter(r => (r.childIds || []).includes(c.id));
+    const solo = mine.filter(r => r.childIds.length === 1).length;
+    const shared = mine.length - solo;
+    const others = (c.groupIds || []).filter(g => g !== currentGroup && groups.some(x => x.id === g));
+    let m = `「${c.code}」を削除します。`;
+    if (others.length) m += `\nほかのクラス（${others.map(groupLabel).join("、")}）からも削除されます。`;
+    if (solo) m += `\n「${c.code}」だけの記録${solo}件も削除されます。`;
+    if (shared) m += `\nほかの子と一緒の記録${shared}件からは「${c.code}」が外れます（記録は残ります）。`;
+    m += "\n元に戻せません。よろしいですか？\n（記録を残したいときは「表示しない」をお使いください）";
+    return m;
+  }
+  async function deleteChild(c) {
+    if (!(await ask(deleteChildMessage(c), {ok:"削除する", danger:true}))) return;
+    if (editingChildId === c.id) editingChildId = null;
+    if (run("#childStatus", "deleteChild", c.id)) $("#childStatus").textContent = `「${c.code}」を削除しました。`;
+  }
+
+  async function removeRecord(r) {
+    if (!(await ask(`${fmtDate(r.date)}の記録を削除します。元に戻せません。よろしいですか？`, {ok:"削除する", danger:true}))) return;
     run("#saveStatus", "deleteRecord", r.id);
   }
 
@@ -684,6 +780,84 @@ td.quiet{color:var(--warn);font-weight:700}
     $("#csvStatus").textContent = ok ? "書き出しました。" : "キャンセルしました。";
   });
 
+  const jCanWrite = () => true;
+  const jErr = e => errMsg(e);
+  const tfmt = t => new Date(t).toLocaleString("ja-JP", {month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit"});
+  const journalMeta = j => `最終更新：${tfmt(j.updatedAt)}`;
+  const journalSave = async (id, body) => {
+    const old = state.journals.find(x => x.id === id);
+    if (old) Object.assign(old, body, {updatedAt:Date.now()});
+    else state.journals.push({id, ...body, createdAt:Date.now(), updatedAt:Date.now()});
+    try { persist(); } catch (e) { load(); apply(); throw e; }
+    apply();
+  };
+  const journalDelete = async id => { state.journals = state.journals.filter(x => x.id !== id); persist(); apply(); };
+  const jCsvSave = async (name, data) => (await saveFile(name, data, "text/csv")) ? "書き出しました。" : "キャンセルしました。";
+  // ---------- 日誌 ----------
+  const journalId = (g, d) => `${g}_${d}`;
+  const journalFor = (g, d) => journals.find(j => j.groupId === g && j.date === d);
+  const snippet = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n) + "…" : s; };
+  let jLoaded = {group:"", date:""}, jDirty = false;
+  ["#jActivity", "#jWhole", "#jReflect"].forEach(s => $(s).addEventListener("input", () => { jDirty = true; }));
+  $("#jDate").value = today();
+  function fillJournal(force) {
+    const date = $("#jDate").value || today();
+    if (!force && jLoaded.group === currentGroup && jLoaded.date === date) return;
+    const j = journalFor(currentGroup, date) || {};
+    $("#jActivity").value = j.activity || ""; $("#jWhole").value = j.whole || ""; $("#jReflect").value = j.reflect || "";
+    jLoaded = {group:currentGroup, date}; jDirty = false; $("#jStatus").textContent = "";
+  }
+  async function goJournalDate(date) {
+    if (jDirty && !(await ask("保存していない入力があります。保存せずに日付を切り替えますか？", {ok:"切り替える"}))) { $("#jDate").value = jLoaded.date || today(); return false; }
+    $("#jDate").value = date; renderJournal(); return true;
+  }
+  $("#jDate").addEventListener("change", () => goJournalDate($("#jDate").value || today()));
+  function renderJournal() {
+    if (!$("#jDate").value) $("#jDate").value = today();
+    const date = $("#jDate").value;
+    fillJournal(false);
+    const j = journalFor(currentGroup, date);
+    $("#jTitle").textContent = `${fmtDate(date)}の日誌`;
+    $("#jMeta").textContent = !currentGroup ? "クラスを作成すると日誌を書けるようになります。" : j ? journalMeta(j) : "この日の日誌はまだありません。";
+    $("#jSave").disabled = !currentGroup || !jCanWrite();
+    $("#jDelete").hidden = !j || !jCanWrite();
+    const dayRecs = groupRecords().filter(r => r.date === date);
+    $("#jRecords").replaceChildren(dayRecs.length ? el("ul", {class:"trail", style:"margin-top:12px"}, dayRecs.map(r => entryNode(r))) : el("p", {class:"empty"}, "この日の個別の記録はありません。"));
+    const list = journals.filter(x => x.groupId === currentGroup).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 60);
+    $("#jList").replaceChildren(list.length ? el("ul", {class:"childlist"}, list.map(x => el("li", {},
+      el("button", {class:"linkbtn", style:"min-width:7.5em;text-align:left", onclick:async () => { if (await goJournalDate(x.date)) window.scrollTo({top:0, behavior:"smooth"}); }}, fmtDate(x.date)),
+      el("span", {class:"note"}, snippet(x.activity || x.whole || x.reflect, 40)),
+      el("span", {class:"status"}, `記録${groupRecords().filter(r => r.date === x.date).length}件`)))) : el("p", {class:"empty"}, "まだ日誌はありません。"));
+  }
+  $("#jSave").addEventListener("click", async () => {
+    if (!currentGroup) return;
+    const date = $("#jDate").value || today();
+    const body = {groupId:currentGroup, date, activity:$("#jActivity").value.trim(), whole:$("#jWhole").value.trim(), reflect:$("#jReflect").value.trim()};
+    if (!body.activity && !body.whole && !body.reflect) return $("#jStatus").textContent = "どれか1つ以上入力してください。";
+    $("#jSave").disabled = true;
+    try { await journalSave(journalId(currentGroup, date), body); jDirty = false; jLoaded = {group:currentGroup, date}; $("#jStatus").textContent = "日誌を保存しました。"; }
+    catch (e) { $("#jStatus").textContent = jErr(e); }
+    $("#jSave").disabled = !currentGroup || !jCanWrite();
+    renderAll();
+  });
+  $("#jDelete").addEventListener("click", async () => {
+    const date = $("#jDate").value;
+    if (!(await ask(`${fmtDate(date)}の日誌を削除します。元に戻せません。よろしいですか？`, {ok:"削除する", danger:true}))) return;
+    try {
+      await journalDelete(journalId(currentGroup, date));
+      $("#jActivity").value = ""; $("#jWhole").value = ""; $("#jReflect").value = ""; jDirty = false;
+      $("#jStatus").textContent = "削除しました。";
+    } catch (e) { $("#jStatus").textContent = jErr(e); }
+    renderAll();
+  });
+  $("#jCsvBtn").addEventListener("click", async () => {
+    if (!currentGroup) return $("#csvStatus").textContent = "クラスを選んでください。";
+    const head = ["クラス", "日付", "活動内容", "全体の子どもの姿", "振り返り・次への課題"];
+    const lines = journals.filter(j => j.groupId === currentGroup).sort((a, b) => a.date.localeCompare(b.date)).map(j => [groupLabel(j.groupId), j.date, j.activity, j.whole, j.reflect].map(csvCell).join(","));
+    const safe = groupLabel(currentGroup).replace(/[\\/:*?"<>|\s]+/g, "_");
+    $("#csvStatus").textContent = await jCsvSave(`日誌_${safe}_${today().replace(/-/g, "")}.csv`, "\uFEFF" + [head.map(csvCell).join(","), ...lines].join("\r\n"));
+  });
+
   // バックアップ・復元
   function renderBackup() {
     const t = state.lastBackup;
@@ -694,7 +868,7 @@ td.quiet{color:var(--warn);font-weight:700}
     if (!nag.hidden) nag.replaceChildren(t ? "前回のバックアップから1か月以上たっています。" : "記録がたまってきました。", " ", el("button", {class:"linkbtn", onclick:() => showTab("setup")}, "バックアップを保存する"));
   }
   $("#backupBtn").addEventListener("click", async () => {
-    const data = JSON.stringify({app:"sodachi-ashiato", version:1, exportedAt:new Date().toISOString(), groups:state.groups, children:state.children, records:state.records}, null, 1);
+    const data = JSON.stringify({app:"sodachi-ashiato", version:1, exportedAt:new Date().toISOString(), groups:state.groups, children:state.children, records:state.records, journals:state.journals}, null, 1);
     const ok = await saveFile(`あしあとバックアップ_${stamp()}.json`, data, "application/json");
     if (ok) { state.lastBackup = Date.now(); try { persist(); } catch (e) {} $("#backupStatus").textContent = "バックアップを保存しました。ファイルアプリやクラウドなど、端末の外にも保管してください。"; }
     else $("#backupStatus").textContent = "キャンセルしました。";
@@ -706,8 +880,8 @@ td.quiet{color:var(--warn);font-weight:700}
     try {
       const d = JSON.parse(await f.text());
       if (d.app !== "sodachi-ashiato" || !Array.isArray(d.records) || !Array.isArray(d.children) || !Array.isArray(d.groups)) throw new Error();
-      if (!confirm(`バックアップ（${(d.exportedAt || "").slice(0, 10)}、記録${d.records.length}件）で、今この端末にある記録をすべて置き換えます。よろしいですか？`)) return;
-      state.groups = d.groups; state.children = d.children; state.records = d.records;
+      if (!(await ask(`バックアップ（${(d.exportedAt || "").slice(0, 10)}、記録${d.records.length}件）で、今この端末にある記録をすべて置き換えます。よろしいですか？`, {ok:"置き換える", danger:true}))) return;
+      state.groups = d.groups; state.children = d.children; state.records = d.records; state.journals = Array.isArray(d.journals) ? d.journals : [];
       persist(); currentGroup = ""; apply();
       $("#backupStatus").textContent = `復元しました（記録${d.records.length}件）。`;
     } catch (err) { load(); $("#backupStatus").textContent = "このファイルは読み込めませんでした。「育ちのあしあと」で保存したバックアップか確認してください。"; }
